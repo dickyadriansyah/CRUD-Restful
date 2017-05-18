@@ -1,0 +1,206 @@
+
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+    <head>
+        <title>TODO supply a title</title>
+        <meta charset="UTF-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+    </head>
+    <body>
+
+        <div th:fragment="content">
+
+
+
+            <table id="tabelKategori" class="table table-striped table-bordered">
+                <thead>
+                    <tr>
+                        <th>ID Kategori</th>
+                        <th>Nama Kategori</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>ID Kategori</th>
+                        <th>Nama Kategori</th>
+                        <th>Action</th>
+                    </tr>
+                </tfoot>
+            </table>
+
+            <br/>
+            <br/>
+
+            <button class="btn btn-primary" onclick="tambah_data()">Tambah Data</button>
+
+            <button class="btn btn-primary" onclick="reload_table()">Reload Data</button>
+
+            <div class="modal fade" id="add-kategori" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-title" id="myModalLabel">Tambah Data Kategori</h4>
+                        </div>
+                        <div class="modal-body form">
+                            <form id="form" class="form-horizontal" action="#">
+                                <div class="form-group">
+                                    <label class="col-lg-3 control-label">ID Kategori</label>
+                                    <div class="col-lg-5">
+                                        <input style="width: 210px;"  class="form-control" type="text" id="idkategori" name="idkategori"/>
+                                        <span class="help-block" id="pesan"></span>
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label class="col-lg-3 control-label">Nama Kategori</label>
+                                    <div class="col-lg-5">
+                                        <input style="width: 210px;"  class="form-control" type="text" id="nama" name="nama"/>
+                                        <span class="help-block" id="pesan-nama"></span>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" id="btn-aksi" onclick="simpan()" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-danger" data-dismiss="modal">Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal fade" id="message" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                            <h4 class="modal-pesan" id="myModalLabel">Message</h4>
+                        </div>
+                        <div class="modal-body form">
+                            <h3><label class="label-info">Sukses</label></h3>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-success" data-dismiss="modal">OK</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+
+            <script type="text/javascript">
+                $(document).ready(function () {
+
+                    var table = $('#tabelKategori');
+
+                    if (table.length) {
+
+                        table.DataTable({
+                            lengthMenu: [[3, 5, 10, -1], ['3 Records', '5 Records', '10 Records', 'ALL']],
+                            pageLength: 5,
+                            ajax: {
+                                url: '/api/kategori',
+                                dataSrc: ''
+                            },
+                            columns: [
+                                {
+                                    data: 'idkategori'
+                                },
+                                {
+                                    data: 'nama'
+                                },
+                                {
+                                    data: 'idkategori',
+                                    bSortable: false,
+                                    mRender: function (data, type, row) {
+                                        var str = '';
+
+                                        str += '<button class="btn btn-warning editButton" data-id="' + data + '">Edit</button> ';
+                                        str += '<button class="btn btn-danger hapusButton" data-id="' + data + '">Delete</button>';
+                                        return str;
+                                    }
+                                }
+                            ]
+                        });
+                    }
+
+
+                    $(document).on('click', '.editButton', function () {
+
+                        var id = $(this).attr('data-id');
+                        $('.help-block').empty();
+                        $.ajax({
+                            url: '/api/carikategori/' + id,
+                            method: 'GET'
+                        }).success(function (response) {
+
+                            $('[name="idkategori"]').val(response.idkategori);
+                            $('[name="nama"]').val(response.nama);
+                            $('#add-kategori').modal('show');
+                            $('.modal-title').text('Edit Data Kategori');
+                            $('#btn-aksi').text('Edit');
+
+                        });
+
+                    });
+
+                    $(document).on('click', '.hapusButton', function () {
+
+                        if (confirm('Are you sure delete this data?')) {
+                            var id = $(this).attr('data-id');
+                            $.ajax({
+                                url: '/api/hapus/' + id,
+                                method: 'DELETE'
+                            }).success(function () {
+
+                                reload_table();
+
+                            });
+                        }
+                    });
+
+                });
+
+                function tambah_data() {
+                    $('#form')[0].reset();
+                    $('.help-block').empty();
+                    $('#add-kategori').modal('show');
+                    $('.modal-title').text('Tambah Data Kategori');
+                    $('#btn-aksi').text('Save');
+                }
+
+                function simpan() {
+
+                    txtId = $('#idkategori').val();
+                    txtNama = $('#nama').val();
+
+                    if (txtId == "") {
+                        $('#pesan').text('ID Kategori tidak boleh kosong');
+                    }else if(txtNama == ""){
+                        $('#pesan-nama').text('Nama tidak boleh kosong');
+                    }else {
+                        $.ajax({
+                            url: '/api/simpanrubah',
+                            type: 'POST',
+                            data: JSON.stringify({idkategori: txtId, nama: txtNama}),
+                            contentType: 'application/json;charset=UTF-8',
+                            dataType: 'JSON',
+                            complete: function () {
+                                $('#add-kategori').modal('hide');
+                                $('#message').modal('show');
+                                reload_table();
+                            }
+
+                        });
+                    }
+                }
+
+                function reload_table()
+                {
+                    $('#tabelKategori').DataTable().ajax.reload();
+                }
+
+            </script>
+        </div>
+    </body>
+</html>
